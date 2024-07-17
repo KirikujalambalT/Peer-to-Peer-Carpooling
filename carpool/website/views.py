@@ -469,11 +469,9 @@ def service_detail(request, pk):
 
     # Fetch calendar data based on driver's user
     calendar_data = CalendarData.objects.filter(username=driver.usern.username, is_deleted=False)
-    print(f'calendar data--> {calendar_data}')
     # Create a list of dates for the next 4 weeks
     current_date = datetime.now()
     dates_list = [(current_date + timedelta(days=i)).strftime("%Y%m%d") for i in range(28)]
-    print(f'dates_list--> {dates_list}')
     # Create a list to hold ungrouped intervals
     #ungrouped_intervals = []
     grouped_calendar_data = {}
@@ -494,9 +492,7 @@ def service_detail(request, pk):
                     'pretty_date': datetime.strptime(date, "%Y%m%d").strftime("%d %b")
                 }
                 grouped_calendar_data[date] = inner_json
-         
-    print(f'Calculated grouped_calendar_data :: {grouped_calendar_data}')
-   
+  
     grouped_calendar_data = dict(sorted(grouped_calendar_data.items())) # sort the dates in ascending order
     context = {
         'service': service,
@@ -505,8 +501,6 @@ def service_detail(request, pk):
         'user': request.user,  # Pass the logged-in user object to the template
         'driver_username': driver.usern.username,  # Add driver's username to context
     }
-
-    print(f'context in service_detail_page :: {context}')
 
     return render(request, 'service_detail_page.html', context)
 
