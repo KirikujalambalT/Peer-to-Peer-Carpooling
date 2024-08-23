@@ -32,12 +32,9 @@
     </ul>
     <ul id="rest">
       <ul><a href="{% url 'home' %}" class="active">Home</a></ul>
+      <ul><a href="{% url 'searchmymentor' %}">Book Your Service</a></ul>
       {% if user.is_authenticated %}
-        {% if userType == 'Student' %}
-        <ul><a href="{% url 'searchmymentor' %}">Book Your Service</a></ul>
-        {% elif userType == 'Mentor' %}
-        <ul><a href="{% url 'dashboard' %}">Dashboard</a></ul>
-        {% endif %}
+      <ul><a href="{% url 'dashboard' %}">Dashboard</a></ul>
       <ul><a href="{% url 'logout' %}">Logout</a></ul>
       {% else %}
       <ul><a href="{% url 'register' %}">Register</a></ul>

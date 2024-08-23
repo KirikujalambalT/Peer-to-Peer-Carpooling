@@ -1,4 +1,5 @@
 #from dateutil.parser import parse, ParserError
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.timezone import make_aware
 from django.views import View
@@ -39,18 +40,10 @@ from collections import defaultdict
 
 
 # Create your views here.
-
 # Home page
 def home(request):
-    if request.user.is_authenticated:
-         user_id = request.user.id
-         if Student.objects.filter(usern=user_id).exists():
-            userType = 'Student'
-         elif Mentor.objects.filter(usern=user_id).exists():
-            userType = 'Mentor'
-         context = {'userType': userType}
-         return render(request, "home.html", context)
     return render(request, "home.html")
+
 
 # Function to help login the user and open dashboard
 def LoginUser(request):
@@ -66,7 +59,7 @@ def LoginUser(request):
             if user is not None:
                 login(request, user)
 
-                # Check if the user is a Customer
+                # Check if the user is a Student
                 if Student.objects.filter(usern=user).exists():
                     return redirect('searchmymentor')
 
@@ -135,10 +128,10 @@ def Register(request):
                 return redirect('register')
 
             try:
-				 # Create user object
+                # Create user object
                 user = User.objects.create_user(username=usern, email=email, password=password)
                 user.save()
-                # Create customer object
+                # Create student object
                 cust = Student.objects.create(
                     usern=user,
                     fname=fname,
@@ -157,7 +150,7 @@ def Register(request):
                     role=role,
                     languages=languages_str
                 )
-                # Save customer object
+                # Save student object
                 cust.save()
                 messages.success(request, "Account created successfully!")
                 return redirect('login')
@@ -200,47 +193,47 @@ def Register(request):
             print("Services:", services)
             print("Description:", description)
 
-        if len(mobile) != 10 or not mobile.isdigit():
-            messages.warning(request, "The phone number provided is not valid!")
-            return redirect('register')
+            if len(mobile) != 10 or not mobile.isdigit():
+                messages.warning(request, "The phone number provided is not valid!")
+                return redirect('register')
 
-        try:
-            user = User.objects.create_user(username=usern, email=email, password=password)
-            user.save()
-            driver = Mentor.objects.create(
-                usern=user,
-                fname=fname,
-                email=email,
-                mobile=mobile,
-                address=address,
-                gender=gender,
-                state=state,
-                city=city,
-                role=role,
-                year_of_experience=year_of_experience,
-                languages_spoken=languages_str,
-                services=services,
-                description=description
-            )
-            cropped_image_data = request.POST['cropped_image_data']
-            if cropped_image_data:
-                format, imgstr = cropped_image_data.split(';base64,')
-                ext = format.split('/')[-1]
-                data = ContentFile(base64.b64decode(imgstr), name=f'{usern}_profile_picture.{ext}')
-                driver.profile_picture.save(data.name, data)
-                driver.save()
-            else:
-                img_data = None
-            messages.success(request, "Account created successfully!")
-            return redirect('login')
-        except IntegrityError:
-            messages.warning(request, "Account already exists!")
-            return redirect('register')
+            try:
+                user = User.objects.create_user(username=usern, email=email, password=password)
+                user.save()
+                driver = Mentor.objects.create(
+                    usern=user,
+                    fname=fname,
+                    email=email,
+                    mobile=mobile,
+                    address=address,
+                    gender=gender,
+                    state=state,
+                    city=city,
+                    role=role,
+                    year_of_experience=year_of_experience,
+                    languages_spoken=languages_str,
+                    services=services,
+                    description=description
+                )
+                cropped_image_data = request.POST['cropped_image_data']
+                if cropped_image_data:
+                    format, imgstr = cropped_image_data.split(';base64,')
+                    ext = format.split('/')[-1]
+                    data = ContentFile(base64.b64decode(imgstr), name=f'{usern}_profile_picture.{ext}')
+                    driver.profile_picture.save(data.name, data)
+                    driver.save()
+                else:
+                    img_data = None
+                messages.success(request, "Account created successfully!")
+                return redirect('login')
+            except IntegrityError:
+                messages.warning(request, "Account already exists!")
+                return redirect('register')
 
     return render(request, "registration.html")
 
 
-
+from collections import defaultdict
 
 def generate_time_intervals():
     current_time = datetime.strptime("12:00 AM", "%I:%M %p")
@@ -426,7 +419,7 @@ def Search(request):
 @login_required(login_url='login')
 def page(request, username):
     try:
-        # Attempt to fetch Customer by username
+        # Attempt to fetch Student by username
         cust = Student.objects.get(usern__username=username)
         context = {'cust': cust}
         return render(request, "page.html", context)
@@ -512,17 +505,7 @@ def service_detail(request, pk):
                 }
 
     print(f'Calculated grouped_calendar_data :: {grouped_calendar_data}')
-    print(f'len(grouped_calendar_data):: {len(grouped_calendar_data)}')
-    if len(grouped_calendar_data) < 1:
-        context = {
-            'service': service,
-            'amount_in_paise': amount_in_paise,
-            'calendar_data': grouped_calendar_data,
-            'user': request.user,
-            'driver_username': driver.usern.username,
-            'mentor_availability': False
-        }
-        return render(request, 'service_detail_page.html', context)
+
     grouped_calendar_data = dict(sorted(grouped_calendar_data.items()))  # sort the dates in ascending order
 
     context = {
@@ -531,7 +514,6 @@ def service_detail(request, pk):
         'calendar_data': grouped_calendar_data,
         'user': request.user,
         'driver_username': driver.usern.username,
-        'mentor_availability': True
     }
 
     print(f'context in service_detail_page :: {context}')
@@ -565,7 +547,7 @@ def Contactus(request):
 
             # print(contact_us)
             contact_us.save()
-            # m.commit()
+
             messages.success(request, "Thank you for contacting us, we will reach you soon.")
 
         return render(request, "contact.html")
@@ -576,8 +558,7 @@ def Contactus(request):
 # Function to show dashboard to the logged in users
 def dash(request):
     if request.user.is_authenticated:
-        print(f'In dash function:: {dict(request.POST.items())}')
-        print(f'In dash function:: {request.user}')
+        print(request.user)
         return render(request, "dashboard.html")
 
 
